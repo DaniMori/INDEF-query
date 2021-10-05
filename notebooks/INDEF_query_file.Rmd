@@ -71,3 +71,7 @@ query_data |> write.table(
 )
 ```
 
+
+# Query
+
+One the file has been composed, the query is made to the INDEF
