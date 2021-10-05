@@ -1,0 +1,73 @@
+---
+title: "Creation of an INDEF query file"
+output: html_notebook
+---
+
+# Introduction
+
+This notebook creates a sample file to query the INDEF registry.
+It follows the instructions in [INDEF's User Manual][UM].
+More specifically, in section 7, modality "collective query" (p. 6).
+
+[UM]: https://www.mscbs.gob.es/estadEstudios/estadisticas/estadisticas/estMinisterio/docs/Manual_INDEF_2017.pdf
+
+
+# Composing the file
+
+The manual says that the fields must be separated by the pipe `|` character.
+There are options to search by 1, 4, 7 or 8 fields.
+Within the same file, fields may be empty for a row,
+just by putting two pipes one after another.
+Therefore, it seems reasonable to use the 8-field format,
+which admits the other ones and is thus the most flexible one.
+
+In the following code I try to create a file
+using the 8-field format with bogus data.
+
+```{r}
+if (!require(pacman)) install.packages("pacman")
+library(pacman)
+p_load(tidyverse, lubridate)
+
+
+deaths_data <- tibble(
+  name       = c("Daniel", "Obi-Wan"),
+  surname_1  = c("Morillo", "Kenobi"),
+  surname_2  = c("Cuadrado", NA),
+  sex        = c('v', 'm'),
+  birth_date = dmy(c('29-05-1981', '06-01-1977')),
+  id_num     = c("50116894D", "X4661287F"),
+  id_type    = c('D', 'N')
+)
+
+# Get necessary fields:
+
+query_data <- deaths_data |>
+  mutate(
+    birth_day   = birth_date |> day(),
+    birth_month = birth_date |> month(),
+    birth_year  = birth_date |> year(),
+    final       = NA_character_ # This forces an additional pipe at the end
+  )                       |>
+  select(name:sex, birth_day, birth_month, birth_year, id_num, id_type, final)
+```
+
+
+`write_delim()` is the canonical function to write delimited text files in
+the _tidyverse_; however, it does not admit an encoding parameter,
+and output files are always encoded in `UTF-8` according to its help page.
+Therefore, we use `utils::write.table()` instead
+
+```{r}
+query_data |> write.table(
+  file         = "../dat/indef_query_data.dat",
+  quote        = FALSE,
+  sep          = '|',
+  na           = '',
+  row.names    = FALSE,
+  col.names    = FALSE,
+  fileEncoding = 'Windows-1252'
+  # (Stands for 'ANSI' encoding; see https://stackoverflow.com/a/701920/1585338)
+)
+```
+
